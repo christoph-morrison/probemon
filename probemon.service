@@ -2,7 +2,7 @@
 Description=Probemon MQTT Bridge Service
 
 [Service]
-ExecStart=/usr/local/bin/probemon -i wlan1mon --mac-info --ssid -x 192.168.0.18 -m "/arda/palantir/devices/general.interfaces.probemon/readings/probe-request"
+ExecStart=/usr/local/bin/probemon -i wlan1mon --mac-info --ssid -x 192.168.0.18 -m "/arda/palantir/devices/general.interfaces.probemon/readings/probe"
 StandardOutput=null
 
 [Install]

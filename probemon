@@ -156,10 +156,10 @@ def main():
     parser.add_argument('-P', '--pid', default='', help="PID File")
 
     # MySQL
-    parser.add_argument('--mysql.host',     default='localhost', help="MySQL Host, defaults to localhost")
-    parser.add_argument('--mysql.user',     default='', help="MySQL User")
-    parser.add_argument('--mysql.password', default='', help="MySQL Password")
-    parser.add_argument('--mysql.database', default='proberequests', help="MySQL Database, defaults to proberequests")
+    parser.add_argument('--mysql-host',     default='localhost', help="MySQL Host, defaults to localhost")
+    parser.add_argument('--mysql-user',     default='', help="MySQL User")
+    parser.add_argument('--mysql-password', default='', help="MySQL Password")
+    parser.add_argument('--mysql-database', default='proberequests', help="MySQL Database, defaults to proberequests")
 
     args = parser.parse_args()
 

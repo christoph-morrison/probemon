@@ -1,11 +1,15 @@
-#! /usr/bin/python3
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 
 import paho.mqtt.client as mqtt
-import paho.mqtt.subscribe as subscribe
+# import paho.mqtt.subscribe as subscribe
 import mysql.connector as db_connector
 import ssl
 import argparse
+
+NAME = 'probemon recorder'
+DESCRIPTION = "Record probemon messages to MySQL"
+DEBUG = False
 
 def on_connect(client, userdata, flags, rc):
   mqtt_client.subscribe(args.mqtt_topic, 0)
@@ -37,6 +41,12 @@ def main():
 
     parser.add_argument('--pid',            default='', help="PID File")
     args = parser.parse_args()
+
+    if not args.interface:
+        print("error: capture interface not given, try --help")
+        sys.exit(-1)
+
+    DEBUG = args.debug
 
     # check prerequisits: db host and mqtt broker
     if not args.db_host:

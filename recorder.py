@@ -1,14 +1,16 @@
 #! /usr/bin/python3
 # -*- coding: utf-8 -*-
 
+# paho-mqtt
 import paho.mqtt.client as mqtt
+# mysql-connector
 import paho.mqtt.subscribe as subscribe
 import mysql.connector as db_connector
 import ssl
 import argparse
 
 def on_connect(client, userdata, flags, rc):
-  mqtt_client.subscribe(args.mqtt_topic, 0)
+    mqtt_client.subscribe(args.mqtt_topic, 0)
 
 def on_message(client, userdata, message):
     pass
@@ -19,7 +21,7 @@ def on_subscribe(mosq, obj, mid, granted_qos):
 def main():
     global topic
 
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser = argparse.ArgumentParser(description='Record MQTT-Messages')
 
     # MQTT arguments
     parser.add_argument('--mqtt-broker',    default='localhost', help="MQTT broker host, default localhost")
@@ -37,6 +39,8 @@ def main():
 
     parser.add_argument('--pid',            default='', help="PID File")
     args = parser.parse_args()
+
+    print(args.accumulate(args.integers))
 
     # check prerequisits: db host and mqtt broker
     if not args.db_host:
@@ -92,24 +96,3 @@ def main():
     db.close()
 
 
-"""
-
-def on_message(mosq, obj, msg):
-  # Prepare Data, separate columns and values
-  msg_clear = msg.payload.translate(None, '{}""').split(", ")
-  msg_dict =    {}
-  for i in range(0, len(msg_clear)):
-    msg_dict[msg_clear[i].split(": ")[0]] = msg_clear[i].split(": ")[1]
-
-  # Prepare dynamic sql-statement
-  placeholders = ', '.join(['%s'] * len(msg_dict))
-  columns = ', '.join(msg_dict.keys())
-  sql = "INSERT INTO pws ( %s ) VALUES ( %s )" % (columns, placeholders)
-
-  # Save Data into DB Table
-  try:
-      cursor.execute(sql, msg_dict.values())
-  except mariadb.Error as error:
-      print("Error: {}".format(error))
-  mariadb_connection.commit()
-"""

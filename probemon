@@ -62,7 +62,7 @@ def parse_rssi(packet):
     return dbm_antsignal
 
 
-def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqtt_topic):
+def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqtt_topic, args):
     def packet_callback(packet):
 
         global sensor_data

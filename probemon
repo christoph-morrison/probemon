@@ -62,7 +62,7 @@ def parse_rssi(packet):
     return dbm_antsignal
 
 
-def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqtt_topic, args, cursor):
+def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqtt_topic, args, db):
     def packet_callback(packet):
 
         global sensor_data
@@ -120,6 +120,7 @@ def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqt
 
         # log to db if enabled
         if args.log_db:
+            cursor = db.cursor()
             keys = ", " . join(sensor_data.keys())
             values = ', '.join(['%s'] * len(sensor_data))
             sql = "INSERT INTO `probe_requests` ( %s ) VALUES ( %s )" % (keys, values)
@@ -127,9 +128,9 @@ def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqt
 
             try:
                 cursor.execute(sql, sensor_data.values())
-            except cursor.Error as error:
+            except db.Error as error:
                 print("Error: {}".format(error))
-            cursor.commit()
+            db.commit()
 
         client.publish(mqtt_topic, json.dumps(sensor_data), 1)
     return packet_callback
@@ -210,8 +211,6 @@ def main():
                 print(err)
             sys.exit()
 
-        cursor = db.cursor()
-
     try:
         if args.mqtt_user and args.mqtt_password:
             client.username_pw_set(args.mqtt_user, args.mqtt_password)
@@ -226,7 +225,7 @@ def main():
         if args.log:
             logger.addHandler(logging.StreamHandler(sys.stdout))
         built_packet_cb = build_packet_callback(args.time, logger,
-                                                args.delimiter, args.mac_info, args.ssid, args.rssi, args.mqtt_topic, args, cursor)
+                                                args.delimiter, args.mac_info, args.ssid, args.rssi, args.mqtt_topic, args, db)
         sniff(iface=args.interface, prn=built_packet_cb, store=0, monitor=True)
     finally:
         # Remove PID File on Exit

@@ -193,7 +193,7 @@ def main():
         pid = str(os.getpid())
         open(args.pid, 'w').write(pid)
 
-    if args.log_db
+    if args.log_db:
         try :
             db = db_connector.connect(
                 host = args.db_host,

@@ -62,7 +62,7 @@ def parse_rssi(packet):
     return dbm_antsignal
 
 
-def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqtt_topic, args):
+def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqtt_topic, args, cursor):
     def packet_callback(packet):
 
         global sensor_data
@@ -122,14 +122,14 @@ def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqt
         if args.log_db:
             keys = ", " . join(sensor_data.keys())
             values = ', '.join(['%s'] * len(sensor_data))
-            sql = "INSERT INTO probe_requests ( %s ) VALUES ( %s )" % (keys, values)
+            sql = "INSERT INTO `probe_requests` ( %s ) VALUES ( %s )" % (keys, values)
             print(sql)
 
             try:
                 cursor.execute(sql, sensor_data.values())
-            except mariadb.Error as error:
+            except cursor.Error as error:
                 print("Error: {}".format(error))
-            db.commit()
+            cursor.commit()
 
         client.publish(mqtt_topic, json.dumps(sensor_data), 1)
     return packet_callback
@@ -226,7 +226,7 @@ def main():
         if args.log:
             logger.addHandler(logging.StreamHandler(sys.stdout))
         built_packet_cb = build_packet_callback(args.time, logger,
-                                                args.delimiter, args.mac_info, args.ssid, args.rssi, args.mqtt_topic, args)
+                                                args.delimiter, args.mac_info, args.ssid, args.rssi, args.mqtt_topic, args, cursor)
         sniff(iface=args.interface, prn=built_packet_cb, store=0, monitor=True)
     finally:
         # Remove PID File on Exit

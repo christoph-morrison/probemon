@@ -15,6 +15,7 @@ import paho.mqtt.client as mqtt
 import json
 import struct
 import logging
+import mysql.connector as db_connector
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 
@@ -61,7 +62,7 @@ def parse_rssi(packet):
     return dbm_antsignal
 
 
-def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqtt_topic):
+def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqtt_topic, args, db):
     def packet_callback(packet):
 
         global sensor_data
@@ -117,6 +118,23 @@ def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqt
 
         logger.info(delimiter.join(fields))
 
+        # log to db if enabled
+        if args.log_db:
+            cursor = db.cursor(prepared=True)
+            keys = ", " . join(sensor_data.keys())
+            values = ', '.join(['%s'] * len(sensor_data))
+            sql = "INSERT INTO `probe_requests` ( %s ) VALUES ( %s )" % (keys, values)
+
+            if args.debug:
+                print(*sensor_data.values(), sep = ", ")
+                print(sql)
+
+            try:
+                cursor.execute(sql, list(sensor_data.values()))
+            except db.Error as error:
+                print("Error: {}".format(error))
+            db.commit()
+
         client.publish(mqtt_topic, json.dumps(sensor_data), 1)
     return packet_callback
 
@@ -125,35 +143,51 @@ def main():
     global topic
 
     parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument('-i', '--interface', help="capture interface")
+    parser.add_argument('-i', '--interface',
+                            help="capture interface")
     parser.add_argument('-t', '--time', default='iso',
-                        help="output time format (unix, iso)")
+                            help="output time format (unix, iso)")
     parser.add_argument('-b', '--max-bytes', default=5000000,
-                        help="maximum log size in bytes before rotating")
+                            help="maximum log size in bytes before rotating")
     parser.add_argument('-c', '--max-backups', default=99999,
-                        help="maximum number of log files to keep")
+                            help="maximum number of log files to keep")
     parser.add_argument('-d', '--delimiter', default='\t',
-                        help="output field delimiter")
+                            help="output field delimiter")
     parser.add_argument('-f', '--mac-info', action='store_true',
-                        help="include MAC address manufacturer")
+                            help="include MAC address manufacturer")
     parser.add_argument('-s', '--ssid', action='store_true',
-                        help="include probe SSID in output")
+                            help="include probe SSID in output")
     parser.add_argument('-r', '--rssi', action='store_true',
-                        help="include rssi in output")
+                            help="include rssi in output")
     parser.add_argument('-D', '--debug', action='store_true',
-                        help="enable debug output")
+                            help="enable debug output")
     parser.add_argument('-l', '--log', action='store_true',
-                        help="enable scrolling live view of the logfile")
+                            help="enable scrolling live view of the logfile")
     parser.add_argument('-x', '--mqtt-broker', default='',
-                        help="mqtt broker server")
+                            help="mqtt broker server")
     parser.add_argument('-o', '--mqtt-port', default='1883',
-                        help="mqtt broker port")
-    parser.add_argument('-u', '--mqtt-user', default='', help="mqtt user")
+                            help="mqtt broker port")
+    parser.add_argument('-u', '--mqtt-user', default='',
+                            help="mqtt user")
     parser.add_argument('-p', '--mqtt-password',
-                        default='', help="mqtt password")
+                            default='', help="mqtt password")
     parser.add_argument('-m', '--mqtt-topic',
-                        default='probemon/request', help="mqtt topic")
-    parser.add_argument('-P', '--pid', default='', help="PID File")
+                            default='probemon/request', help="mqtt topic")
+    parser.add_argument('-P', '--pid',
+                            default='', help="PID File")
+    parser.add_argument('--log-db',
+                            default=0, help="Log packets to a database, needs --db-host to be set at least")
+    parser.add_argument('--db-port',
+                            default='3306', help="Database server port, default 3306")
+    parser.add_argument('--db-user',
+                            default='', help="Database server user")
+    parser.add_argument('--db-password',
+                            default='', help="Database server password")
+    parser.add_argument('--db-host',
+                            default='localhost', help="Database server host, default localhost")
+    parser.add_argument('--db',
+                            default='probemon', help="Database, default probemon")
+
     args = parser.parse_args()
 
     if not args.interface:
@@ -171,6 +205,23 @@ def main():
         pid = str(os.getpid())
         open(args.pid, 'w').write(pid)
 
+    if args.log_db:
+        try :
+            db = db_connector.connect(
+                host = args.db_host,
+                user = args.db_user,
+                password = args.db_password,
+                database = args.db
+            )
+        except db_connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+            else:
+                print(err)
+            sys.exit()
+
     try:
         if args.mqtt_user and args.mqtt_password:
             client.username_pw_set(args.mqtt_user, args.mqtt_password)
@@ -185,7 +236,7 @@ def main():
         if args.log:
             logger.addHandler(logging.StreamHandler(sys.stdout))
         built_packet_cb = build_packet_callback(args.time, logger,
-                                                args.delimiter, args.mac_info, args.ssid, args.rssi, args.mqtt_topic)
+                                                args.delimiter, args.mac_info, args.ssid, args.rssi, args.mqtt_topic, args, db)
         sniff(iface=args.interface, prn=built_packet_cb, store=0, monitor=True)
     finally:
         # Remove PID File on Exit

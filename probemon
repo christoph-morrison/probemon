@@ -120,14 +120,17 @@ def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqt
 
         # log to db if enabled
         if args.log_db:
-            cursor = db.cursor()
+            cursor = db.cursor(prepared=True)
             keys = ", " . join(sensor_data.keys())
             values = ', '.join(['%s'] * len(sensor_data))
             sql = "INSERT INTO `probe_requests` ( %s ) VALUES ( %s )" % (keys, values)
-            print(sql)
+
+            if args.debug:
+                print(*sensor_data.values(), sep = ", ")
+                print(sql)
 
             try:
-                cursor.execute(sql, sensor_data.values())
+                cursor.execute(sql, list(sensor_data.values()))
             except db.Error as error:
                 print("Error: {}".format(error))
             db.commit()
@@ -140,42 +143,50 @@ def main():
     global topic
 
     parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument('-i', '--interface', help="capture interface")
+    parser.add_argument('-i', '--interface',
+                            help="capture interface")
     parser.add_argument('-t', '--time', default='iso',
-                        help="output time format (unix, iso)")
+                            help="output time format (unix, iso)")
     parser.add_argument('-b', '--max-bytes', default=5000000,
-                        help="maximum log size in bytes before rotating")
+                            help="maximum log size in bytes before rotating")
     parser.add_argument('-c', '--max-backups', default=99999,
-                        help="maximum number of log files to keep")
+                            help="maximum number of log files to keep")
     parser.add_argument('-d', '--delimiter', default='\t',
-                        help="output field delimiter")
+                            help="output field delimiter")
     parser.add_argument('-f', '--mac-info', action='store_true',
-                        help="include MAC address manufacturer")
+                            help="include MAC address manufacturer")
     parser.add_argument('-s', '--ssid', action='store_true',
-                        help="include probe SSID in output")
+                            help="include probe SSID in output")
     parser.add_argument('-r', '--rssi', action='store_true',
-                        help="include rssi in output")
+                            help="include rssi in output")
     parser.add_argument('-D', '--debug', action='store_true',
-                        help="enable debug output")
+                            help="enable debug output")
     parser.add_argument('-l', '--log', action='store_true',
-                        help="enable scrolling live view of the logfile")
+                            help="enable scrolling live view of the logfile")
     parser.add_argument('-x', '--mqtt-broker', default='',
-                        help="mqtt broker server")
+                            help="mqtt broker server")
     parser.add_argument('-o', '--mqtt-port', default='1883',
-                        help="mqtt broker port")
-    parser.add_argument('-u', '--mqtt-user', default='', help="mqtt user")
+                            help="mqtt broker port")
+    parser.add_argument('-u', '--mqtt-user', default='',
+                            help="mqtt user")
     parser.add_argument('-p', '--mqtt-password',
-                        default='', help="mqtt password")
+                            default='', help="mqtt password")
     parser.add_argument('-m', '--mqtt-topic',
-                        default='probemon/request', help="mqtt topic")
-    parser.add_argument('-P', '--pid', default='', help="PID File")
-
-    parser.add_argument('--log-db',         default=0, help="Log packets to a database, needs --db-host to be set at least")
-    parser.add_argument('--db-port',        default='3306', help="Database server port, default 3306")
-    parser.add_argument('--db-user',        default='', help="Database server user")
-    parser.add_argument('--db-password',    default='', help="Database server password")
-    parser.add_argument('--db-host',        default='localhost', help="Database server host, default localhost")
-    parser.add_argument('--db',             default='probemon', help="Database, default probemon")
+                            default='probemon/request', help="mqtt topic")
+    parser.add_argument('-P', '--pid',
+                            default='', help="PID File")
+    parser.add_argument('--log-db',
+                            default=0, help="Log packets to a database, needs --db-host to be set at least")
+    parser.add_argument('--db-port',
+                            default='3306', help="Database server port, default 3306")
+    parser.add_argument('--db-user',
+                            default='', help="Database server user")
+    parser.add_argument('--db-password',
+                            default='', help="Database server password")
+    parser.add_argument('--db-host',
+                            default='localhost', help="Database server host, default localhost")
+    parser.add_argument('--db',
+                            default='probemon', help="Database, default probemon")
 
     args = parser.parse_args()
 

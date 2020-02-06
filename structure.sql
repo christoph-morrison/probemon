@@ -7,4 +7,4 @@ CREATE TABLE `probe_requests` (
   `time` timestamp NULL DEFAULT NULL,
   `uppercaseSSID` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4;

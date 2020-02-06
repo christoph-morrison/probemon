@@ -3,7 +3,7 @@ Description=Probemon MQTT Bridge Service
 
 [Service]
 ExecStartPre=/usr/local/bin/probemon/prereq.sh
-ExecStart=/usr/local/bin/probemon/probemon -i wlan1 --mac-info --ssid -x 192.168.0.18 -m "/arda/palantir/devices/general.interfaces.probemon/readings/probe"
+ExecStart=/usr/local/bin/probemon/probemon -i wlan1 --mac-info --ssid -x 192.168.0.18 -m "/arda/palantir/devices/general.interfaces.probemon/readings/probe" --db-user=probe --db-password=probe --db-host=amon-hen --db=wifi-probe --log-db=1
 StandardOutput=null
 
 [Install]

@@ -119,7 +119,7 @@ def build_packet_callback(time_fmt, logger, delimiter, mac_info, ssid, rssi, mqt
         logger.info(delimiter.join(fields))
 
         # log to db if enabled
-        if args.log_db
+        if args.log_db:
             keys = ", " . join(sensor_data.keys())
             values = ', '.join(['%s'] * len(sensor_data))
             sql = "INSERT INTO probe_requests ( %s ) VALUES ( %s )" % (keys, values)

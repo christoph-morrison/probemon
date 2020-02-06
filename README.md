@@ -3,6 +3,8 @@ A simple command line tool for monitoring and logging 802.11 probe frames
 
 I decided to build this simple python script using scapy so that I could record 802.11 probe frames over a long period of time. This was specifically useful in my use case: proving that a person or device was present at a given location at a given time.
 
+Supports publishing to MQTT and MySQL/MariaDB.
+
 ## Usage
 
 ```
@@ -39,23 +41,16 @@ optional arguments:
                         mqtt password
   -m MQTT_TOPIC, --mqtt-topic MQTT_TOPIC
                         mqtt topic
+  --log-db              Log to MySQL/MariaDB database
+  --db-user             Database user name
+  --db-password         Database password
+  --db-host             Database host
+  --db-port             Database port
+  --db                  Database name                       
+
 ```
 
-## systemd Service-File Example
+## systemd Service-File
+Use [probemon.service](probemon.service), but don't forget to setup [the prerequisites](prereq.sh).
 
-```
-[Unit]
-Description=Probemon MQTT Service
-
-[Service]
-PIDFile=/run/probemon.pid
-RemainAfterExit=no
-Restart=on-failure
-RestartSec=5s
-ExecStart=/root/python/probemon/probemon.py -i mon0 --mac-info --ssid --rssi --mqtt-broker IP --mqtt-user USERNAME --mqtt-password PASSWORD --mqtt-topic TOPIC  --pid /run/probemon.pid
-StandardOutput=null
-
-[Install]
-WantedBy=multi-user.target
-Alias=probemon.servic
-```
+After checkout, you can install this convientently by `bash install.sh` on Debian-related systems.
